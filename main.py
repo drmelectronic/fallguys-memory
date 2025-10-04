@@ -3,19 +3,15 @@ import random
 
 from twisted.internet import reactor
 from twisted.internet.task import LoopingCall
+import configparser
+import json
 import pygame
-
+THEME = 'mariokart8'
+ITEMS = os.listdir(f'themes/{THEME}/items')
+print(ITEMS)
 FPS = 15
 # DISPLAY = pygame.display.set_mode((1900, 1080), pygame.FULLSCREEN)
 DISPLAY = pygame.display.set_mode((1900, 1060))
-FRUTAS = [
-    'manzana',
-    'cereza',
-    'platano',
-    'naranja',
-    'sandia',
-    'uva'
-]
 LEVELS = [2, 3, 4, 5, 6]
 MARGIN = 20
 WIDTH_CARD = 300
@@ -24,14 +20,18 @@ WHITE = (255, 255, 255)
 GRAY = (100, 100, 100)
 PLAY = True
 
+CONFIG = configparser.ConfigParser()
+CONFIG.read(f'themes/{THEME}/config.ini')
+
 
 class Game:
 
     def __init__(self, x, y):
+        self.background = json.loads(CONFIG['COLORS']['background'])
         pygame.init()
         self.X = x
         self.Y = y
-        logo = pygame.image.load(os.path.join('images/logo.png'))
+        logo = pygame.image.load(os.path.join(f'themes/{THEME}/logo.png'))
         pygame.display.set_icon(logo)
         pygame.display.set_caption("Fall Guys Memory")
         self.mostrando = False
@@ -40,7 +40,7 @@ class Game:
         self.opciones = []
         self.time_oculto = 4
         self.time_mostrado = 14
-        self.cronometro = Cronometro(1350 + 150, 250, 200, 100, '0', (249, 206, 60), 120)
+        self.cronometro = Cronometro(1350 + 150, 250, 200, 100, '0', json.loads(CONFIG['COLORS']['cronometro']), 120)
         self.cronometro.inicializar_cards = self.inicializar_cards
         self.cronometro.termino_tiempo = self.termino_tiempo
         self.cronometro.liberar_cards = self.liberar_cards
@@ -59,7 +59,7 @@ class Game:
         self.start_button.set_callback(self.cronometro.init)
         self.finish_button = Button(1450 + 150, 930, 300, 80, 'FINISH', color=(255, 100, 100), size=35)
         self.finish_button.set_callback(self.close)
-        self.nivel = Button(1150 + 150, 70, 600, 120, 'NIVEL', color=(5, 180, 252), size=80)
+        self.nivel = Button(1150 + 150, 70, 600, 120, 'NIVEL', color=json.loads(CONFIG['COLORS']['level']), size=80)
         self.nivel.set_color_font((255, 39, 144))
         self.set_nivel(0)
 
@@ -70,14 +70,14 @@ class Game:
     def set_nivel(self, nivel):
         self.nivel.set_text(f'NIVEL {nivel + 1}')
         level = LEVELS[nivel]
-        frutas = list(FRUTAS)
+        items = list(ITEMS)
         self.opciones = []
         self.cards = []
 
         for r in range(level):
-            choice = random.choice(frutas)
-            index = frutas.index(choice)
-            frutas.pop(index)
+            choice = random.choice(items)
+            index = items.index(choice)
+            items.pop(index)
             self.opciones.append(choice)
 
         ganador = random.choice(self.opciones)
@@ -102,7 +102,7 @@ class Game:
 
     def display(self):
         self.process_events()
-        DISPLAY.fill((248, 142, 190))
+        DISPLAY.fill(self.background)
         for c in self.cards:
             c.display()
         self.cronometro.display()
@@ -282,13 +282,13 @@ class Cronometro(Button):
 
 class Card:
 
-    def __init__(self, x, y, fruta, correcto):
+    def __init__(self, x, y, item, correcto):
         self.x = x
         self.y = y
-        self.fruta = fruta
-        self.image = pygame.image.load(f'images/{fruta}.png')
-        self.tile = pygame.image.load(f'images/tile.png')
-        self.error_img = pygame.image.load(f'images/error.png')
+        self.item = item
+        self.image = pygame.image.load(f'themes/{THEME}/items/{item}')
+        self.tile = pygame.image.load(f'themes/{THEME}/tile.png')
+        self.error_img = pygame.image.load(f'themes/error.png')
         self.mostrado = False
         self.correcto = correcto
         self.show_error = False
